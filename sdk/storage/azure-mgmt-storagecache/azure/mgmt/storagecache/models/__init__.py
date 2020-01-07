@@ -18,6 +18,7 @@ try:
     from ._models_py3 import CacheUpgradeStatus
     from ._models_py3 import ClfsTarget
     from ._models_py3 import CloudErrorBody
+    from ._models_py3 import InnerError
     from ._models_py3 import NamespaceJunction
     from ._models_py3 import Nfs3Target
     from ._models_py3 import ResourceSku
@@ -37,6 +38,7 @@ except (SyntaxError, ImportError):
     from ._models import CacheUpgradeStatus
     from ._models import ClfsTarget
     from ._models import CloudErrorBody
+    from ._models import InnerError
     from ._models import NamespaceJunction
     from ._models import Nfs3Target
     from ._models import ResourceSku
@@ -69,6 +71,7 @@ __all__ = [
     'CacheUpgradeStatus',
     'ClfsTarget',
     'CloudErrorBody',
+    'InnerError',
     'NamespaceJunction',
     'Nfs3Target',
     'ResourceSku',

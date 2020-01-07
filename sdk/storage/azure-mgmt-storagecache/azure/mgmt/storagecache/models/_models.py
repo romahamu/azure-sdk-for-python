@@ -282,6 +282,8 @@ class CloudErrorBody(Model):
     :param target: The target of the particular error. For example, the name
      of the property in error.
     :type target: str
+    :param innererror: The Api inner error
+    :type innererror: ~azure.mgmt.storagecache.models.InnerError
     """
 
     _attribute_map = {
@@ -289,6 +291,7 @@ class CloudErrorBody(Model):
         'details': {'key': 'details', 'type': '[CloudErrorBody]'},
         'message': {'key': 'message', 'type': 'str'},
         'target': {'key': 'target', 'type': 'str'},
+        'innererror': {'key': 'innererror', 'type': 'InnerError'},
     }
 
     def __init__(self, **kwargs):
@@ -297,6 +300,27 @@ class CloudErrorBody(Model):
         self.details = kwargs.get('details', None)
         self.message = kwargs.get('message', None)
         self.target = kwargs.get('target', None)
+        self.innererror = kwargs.get('innererror', None)
+
+
+class InnerError(Model):
+    """Inner error details.
+
+    :param exceptiontype: The exception type.
+    :type exceptiontype: str
+    :param errordetail: The internal error message or exception dump.
+    :type errordetail: str
+    """
+
+    _attribute_map = {
+        'exceptiontype': {'key': 'exceptiontype', 'type': 'str'},
+        'errordetail': {'key': 'errordetail', 'type': 'str'},
+    }
+
+    def __init__(self, **kwargs):
+        super(InnerError, self).__init__(**kwargs)
+        self.exceptiontype = kwargs.get('exceptiontype', None)
+        self.errordetail = kwargs.get('errordetail', None)
 
 
 class NamespaceJunction(Model):
