@@ -392,110 +392,6 @@ class ClfsTarget(Model):
         self.target = target
 
 
-class StorageTargetProperties(Model):
-    """Properties of the Storage Target.
-
-    You probably want to use the sub-classes and not this class directly. Known
-    sub-classes are: Nfs3TargetProperties, ClfsTargetProperties,
-    UnknownTargetProperties
-
-    All required parameters must be populated in order to send to Azure.
-
-    :param junctions: List of Cache namespace junctions to target for
-     namespace associations.
-    :type junctions: list[~azure.mgmt.storagecache.models.NamespaceJunction]
-    :param target_type: Type of the Storage Target.
-    :type target_type: str
-    :param provisioning_state: ARM provisioning state, see
-     https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property.
-     Possible values include: 'Succeeded', 'Failed', 'Cancelled', 'Creating',
-     'Deleting', 'Updating'
-    :type provisioning_state: str or
-     ~azure.mgmt.storagecache.models.ProvisioningStateType
-    :param nfs3: Properties when targetType is nfs3.
-    :type nfs3: ~azure.mgmt.storagecache.models.Nfs3Target
-    :param clfs: Properties when targetType is clfs.
-    :type clfs: ~azure.mgmt.storagecache.models.ClfsTarget
-    :param unknown: Properties when targetType is unknown.
-    :type unknown: ~azure.mgmt.storagecache.models.UnknownTarget
-    :param target_base_type: Required. Constant filled by server.
-    :type target_base_type: str
-    """
-
-    _validation = {
-        'target_base_type': {'required': True},
-    }
-
-    _attribute_map = {
-        'junctions': {'key': 'junctions', 'type': '[NamespaceJunction]'},
-        'target_type': {'key': 'targetType', 'type': 'str'},
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'nfs3': {'key': 'nfs3', 'type': 'Nfs3Target'},
-        'clfs': {'key': 'clfs', 'type': 'ClfsTarget'},
-        'unknown': {'key': 'unknown', 'type': 'UnknownTarget'},
-        'target_base_type': {'key': 'targetBaseType', 'type': 'str'},
-    }
-
-    _subtype_map = {
-        'target_base_type': {'nfs3': 'Nfs3TargetProperties', 'clfs': 'ClfsTargetProperties', 'unknown': 'UnknownTargetProperties'}
-    }
-
-    def __init__(self, *, junctions=None, target_type: str=None, provisioning_state=None, nfs3=None, clfs=None, unknown=None, **kwargs) -> None:
-        super(StorageTargetProperties, self).__init__(**kwargs)
-        self.junctions = junctions
-        self.target_type = target_type
-        self.provisioning_state = provisioning_state
-        self.nfs3 = nfs3
-        self.clfs = clfs
-        self.unknown = unknown
-        self.target_base_type = None
-
-
-class ClfsTargetProperties(StorageTargetProperties):
-    """Storage container for use as a CLFS Storage Target.
-
-    All required parameters must be populated in order to send to Azure.
-
-    :param junctions: List of Cache namespace junctions to target for
-     namespace associations.
-    :type junctions: list[~azure.mgmt.storagecache.models.NamespaceJunction]
-    :param target_type: Type of the Storage Target.
-    :type target_type: str
-    :param provisioning_state: ARM provisioning state, see
-     https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property.
-     Possible values include: 'Succeeded', 'Failed', 'Cancelled', 'Creating',
-     'Deleting', 'Updating'
-    :type provisioning_state: str or
-     ~azure.mgmt.storagecache.models.ProvisioningStateType
-    :param nfs3: Properties when targetType is nfs3.
-    :type nfs3: ~azure.mgmt.storagecache.models.Nfs3Target
-    :param clfs: Properties when targetType is clfs.
-    :type clfs: ~azure.mgmt.storagecache.models.ClfsTarget
-    :param unknown: Properties when targetType is unknown.
-    :type unknown: ~azure.mgmt.storagecache.models.UnknownTarget
-    :param target_base_type: Required. Constant filled by server.
-    :type target_base_type: str
-    """
-
-    _validation = {
-        'target_base_type': {'required': True},
-    }
-
-    _attribute_map = {
-        'junctions': {'key': 'junctions', 'type': '[NamespaceJunction]'},
-        'target_type': {'key': 'targetType', 'type': 'str'},
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'nfs3': {'key': 'nfs3', 'type': 'Nfs3Target'},
-        'clfs': {'key': 'clfs', 'type': 'ClfsTarget'},
-        'unknown': {'key': 'unknown', 'type': 'UnknownTarget'},
-        'target_base_type': {'key': 'targetBaseType', 'type': 'str'},
-    }
-
-    def __init__(self, *, junctions=None, target_type: str=None, provisioning_state=None, nfs3=None, clfs=None, unknown=None, **kwargs) -> None:
-        super(ClfsTargetProperties, self).__init__(junctions=junctions, target_type=target_type, provisioning_state=provisioning_state, nfs3=nfs3, clfs=clfs, unknown=unknown, **kwargs)
-        self.target_base_type = 'clfs'
-
-
 class CloudError(Model):
     """An error response.
 
@@ -671,51 +567,6 @@ class Nfs3Target(Model):
         self.usage_model = usage_model
 
 
-class Nfs3TargetProperties(StorageTargetProperties):
-    """An NFSv3 mount point for use as a Storage Target.
-
-    All required parameters must be populated in order to send to Azure.
-
-    :param junctions: List of Cache namespace junctions to target for
-     namespace associations.
-    :type junctions: list[~azure.mgmt.storagecache.models.NamespaceJunction]
-    :param target_type: Type of the Storage Target.
-    :type target_type: str
-    :param provisioning_state: ARM provisioning state, see
-     https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property.
-     Possible values include: 'Succeeded', 'Failed', 'Cancelled', 'Creating',
-     'Deleting', 'Updating'
-    :type provisioning_state: str or
-     ~azure.mgmt.storagecache.models.ProvisioningStateType
-    :param nfs3: Properties when targetType is nfs3.
-    :type nfs3: ~azure.mgmt.storagecache.models.Nfs3Target
-    :param clfs: Properties when targetType is clfs.
-    :type clfs: ~azure.mgmt.storagecache.models.ClfsTarget
-    :param unknown: Properties when targetType is unknown.
-    :type unknown: ~azure.mgmt.storagecache.models.UnknownTarget
-    :param target_base_type: Required. Constant filled by server.
-    :type target_base_type: str
-    """
-
-    _validation = {
-        'target_base_type': {'required': True},
-    }
-
-    _attribute_map = {
-        'junctions': {'key': 'junctions', 'type': '[NamespaceJunction]'},
-        'target_type': {'key': 'targetType', 'type': 'str'},
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'nfs3': {'key': 'nfs3', 'type': 'Nfs3Target'},
-        'clfs': {'key': 'clfs', 'type': 'ClfsTarget'},
-        'unknown': {'key': 'unknown', 'type': 'UnknownTarget'},
-        'target_base_type': {'key': 'targetBaseType', 'type': 'str'},
-    }
-
-    def __init__(self, *, junctions=None, target_type: str=None, provisioning_state=None, nfs3=None, clfs=None, unknown=None, **kwargs) -> None:
-        super(Nfs3TargetProperties, self).__init__(junctions=junctions, target_type=target_type, provisioning_state=provisioning_state, nfs3=nfs3, clfs=clfs, unknown=unknown, **kwargs)
-        self.target_base_type = 'nfs3'
-
-
 class ResourceSku(Model):
     """A resource SKU.
 
@@ -886,6 +737,8 @@ class StorageTarget(StorageTargetResource):
     Variables are only populated by the server, and will be ignored when
     sending a request.
 
+    All required parameters must be populated in order to send to Azure.
+
     :ivar name: Name of the Storage Target.
     :vartype name: str
     :ivar id: Resource ID of the Storage Target.
@@ -896,8 +749,10 @@ class StorageTarget(StorageTargetResource):
     :param junctions: List of Cache namespace junctions to target for
      namespace associations.
     :type junctions: list[~azure.mgmt.storagecache.models.NamespaceJunction]
-    :param target_type: Type of the Storage Target.
-    :type target_type: str
+    :param target_type: Required. Type of the Storage Target. Possible values
+     include: 'nfs3', 'clfs', 'unknown'
+    :type target_type: str or
+     ~azure.mgmt.storagecache.models.StorageTargetType
     :param provisioning_state: ARM provisioning state, see
      https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property.
      Possible values include: 'Succeeded', 'Failed', 'Cancelled', 'Creating',
@@ -916,6 +771,7 @@ class StorageTarget(StorageTargetResource):
         'name': {'readonly': True},
         'id': {'readonly': True},
         'type': {'readonly': True},
+        'target_type': {'required': True},
     }
 
     _attribute_map = {
@@ -930,7 +786,7 @@ class StorageTarget(StorageTargetResource):
         'unknown': {'key': 'properties.unknown', 'type': 'UnknownTarget'},
     }
 
-    def __init__(self, *, junctions=None, target_type: str=None, provisioning_state=None, nfs3=None, clfs=None, unknown=None, **kwargs) -> None:
+    def __init__(self, *, target_type, junctions=None, provisioning_state=None, nfs3=None, clfs=None, unknown=None, **kwargs) -> None:
         super(StorageTarget, self).__init__(**kwargs)
         self.junctions = junctions
         self.target_type = target_type
@@ -955,51 +811,6 @@ class UnknownTarget(Model):
     def __init__(self, *, unknown_map=None, **kwargs) -> None:
         super(UnknownTarget, self).__init__(**kwargs)
         self.unknown_map = unknown_map
-
-
-class UnknownTargetProperties(StorageTargetProperties):
-    """Storage container for use as an Unknown Storage Target.
-
-    All required parameters must be populated in order to send to Azure.
-
-    :param junctions: List of Cache namespace junctions to target for
-     namespace associations.
-    :type junctions: list[~azure.mgmt.storagecache.models.NamespaceJunction]
-    :param target_type: Type of the Storage Target.
-    :type target_type: str
-    :param provisioning_state: ARM provisioning state, see
-     https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property.
-     Possible values include: 'Succeeded', 'Failed', 'Cancelled', 'Creating',
-     'Deleting', 'Updating'
-    :type provisioning_state: str or
-     ~azure.mgmt.storagecache.models.ProvisioningStateType
-    :param nfs3: Properties when targetType is nfs3.
-    :type nfs3: ~azure.mgmt.storagecache.models.Nfs3Target
-    :param clfs: Properties when targetType is clfs.
-    :type clfs: ~azure.mgmt.storagecache.models.ClfsTarget
-    :param unknown: Properties when targetType is unknown.
-    :type unknown: ~azure.mgmt.storagecache.models.UnknownTarget
-    :param target_base_type: Required. Constant filled by server.
-    :type target_base_type: str
-    """
-
-    _validation = {
-        'target_base_type': {'required': True},
-    }
-
-    _attribute_map = {
-        'junctions': {'key': 'junctions', 'type': '[NamespaceJunction]'},
-        'target_type': {'key': 'targetType', 'type': 'str'},
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'nfs3': {'key': 'nfs3', 'type': 'Nfs3Target'},
-        'clfs': {'key': 'clfs', 'type': 'ClfsTarget'},
-        'unknown': {'key': 'unknown', 'type': 'UnknownTarget'},
-        'target_base_type': {'key': 'targetBaseType', 'type': 'str'},
-    }
-
-    def __init__(self, *, junctions=None, target_type: str=None, provisioning_state=None, nfs3=None, clfs=None, unknown=None, **kwargs) -> None:
-        super(UnknownTargetProperties, self).__init__(junctions=junctions, target_type=target_type, provisioning_state=provisioning_state, nfs3=nfs3, clfs=clfs, unknown=unknown, **kwargs)
-        self.target_base_type = 'unknown'
 
 
 class UsageModel(Model):
