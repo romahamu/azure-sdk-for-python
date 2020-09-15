@@ -159,7 +159,7 @@ class StorageCommonBlobTest(StorageTestCase):
         self.assertTrue(exists)
 
     @GlobalResourceGroupPreparer()
-    @StorageAccountPreparer(location="canadacentral", name_prefix='storagename')
+    @StorageAccountPreparer(random_name_enabled=True, location="canadacentral", name_prefix='storagename')
     def test_blob_exists_with_if_tags(self, resource_group, location, storage_account, storage_account_key):
         self._setup(storage_account, storage_account_key)
         tags = {"tag1 name": "my tag", "tag2": "secondtag", "tag3": "thirdtag"}
@@ -193,10 +193,11 @@ class StorageCommonBlobTest(StorageTestCase):
 
         # Act
         blob = self.bsc.get_blob_client(self.container_name, blob_name, snapshot=snapshot)
-        exists = blob.get_blob_properties()
+        prop = blob.get_blob_properties()
 
         # Assert
-        self.assertTrue(exists)
+        self.assertTrue(prop)
+        self.assertEqual(snapshot['snapshot'], prop.snapshot)
 
 
     @GlobalStorageAccountPreparer()
@@ -238,7 +239,7 @@ class StorageCommonBlobTest(StorageTestCase):
         self.assertEqual(data.readall(), blob_data)
 
     @GlobalResourceGroupPreparer()
-    @StorageAccountPreparer(location="canadacentral", name_prefix='storagename')
+    @StorageAccountPreparer(random_name_enabled=True, location="canadacentral", name_prefix='storagename')
     def test_create_blob_with_if_tags(self, resource_group, location, storage_account, storage_account_key):
         self._setup(storage_account, storage_account_key)
         tags = {"tag1 name": "my tag", "tag2": "secondtag", "tag3": "thirdtag"}
@@ -459,7 +460,7 @@ class StorageCommonBlobTest(StorageTestCase):
         self.assertEqual(props.content_settings.content_disposition, 'inline')
 
     @GlobalResourceGroupPreparer()
-    @StorageAccountPreparer(location="canadacentral", name_prefix='storagename')
+    @StorageAccountPreparer(random_name_enabled=True, location="canadacentral", name_prefix='storagename')
     def test_set_blob_properties_with_if_tags(self, resource_group, location, storage_account, storage_account_key):
         self._setup(storage_account, storage_account_key)
         tags = {"tag1 name": "my tag", "tag2": "secondtag", "tag3": "thirdtag"}
@@ -698,7 +699,7 @@ class StorageCommonBlobTest(StorageTestCase):
 
     @pytest.mark.live_test_only
     @GlobalResourceGroupPreparer()
-    @StorageAccountPreparer(location="canadacentral", name_prefix='storagename')
+    @StorageAccountPreparer(random_name_enabled=True, location="canadacentral", name_prefix='storagename')
     def test_set_blob_metadata_with_if_tags(self, resource_group, location, storage_account, storage_account_key):
         # bug in devtools...converts upper case header to lowercase
         # passes live.
@@ -757,7 +758,7 @@ class StorageCommonBlobTest(StorageTestCase):
         self.assertIsNone(resp)
 
     @GlobalResourceGroupPreparer()
-    @StorageAccountPreparer(location="canadacentral", name_prefix='storagename')
+    @StorageAccountPreparer(random_name_enabled=True, location="canadacentral", name_prefix='storagename')
     def test_delete_blob_with_if_tags(self, resource_group, location, storage_account, storage_account_key):
         self._setup(storage_account, storage_account_key)
         tags = {"tag1 name": "my tag", "tag2": "secondtag", "tag3": "thirdtag"}
@@ -1151,7 +1152,7 @@ class StorageCommonBlobTest(StorageTestCase):
         self.assertEqual(copy_content, self.byte_data)
 
     @GlobalResourceGroupPreparer()
-    @StorageAccountPreparer(location="canadacentral", name_prefix='storagename')
+    @StorageAccountPreparer(random_name_enabled=True, location="canadacentral", name_prefix='storagename')
     def test_async_copy_blob_with_if_tags(self, resource_group, location, storage_account, storage_account_key):
         self._setup(storage_account, storage_account_key)
         source_tags = {"source": "source tag"}
@@ -2307,7 +2308,7 @@ class StorageCommonBlobTest(StorageTestCase):
         self.assertEqual(permission.read, True)
         self.assertEqual(permission.delete, True)
         self.assertEqual(permission.write, True)
-        self.assertEqual(permission._str, 'wrdx')
+        self.assertEqual(permission._str, 'rwdx')
 
     @GlobalStorageAccountPreparer()
     def test_transport_closed_only_once(self, resource_group, location, storage_account, storage_account_key):
