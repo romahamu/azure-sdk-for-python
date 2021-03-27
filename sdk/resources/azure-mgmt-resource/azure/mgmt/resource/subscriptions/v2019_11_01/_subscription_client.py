@@ -21,10 +21,11 @@ from ._configuration import SubscriptionClientConfiguration
 from .operations import Operations
 from .operations import SubscriptionsOperations
 from .operations import TenantsOperations
+from .operations import SubscriptionClientOperationsMixin
 from . import models
 
 
-class SubscriptionClient(object):
+class SubscriptionClient(SubscriptionClientOperationsMixin):
     """All resource groups and resources exist within subscriptions. These operation enable you get information about your subscriptions and tenants. A tenant is a dedicated instance of Azure Active Directory (Azure AD) for your organization.
 
     :ivar operations: Operations operations
@@ -36,7 +37,6 @@ class SubscriptionClient(object):
     :param credential: Credential needed for the client to connect to Azure.
     :type credential: ~azure.core.credentials.TokenCredential
     :param str base_url: Service URL
-    :keyword int polling_interval: Default waiting time between two polls for LRO operations if no Retry-After header is present.
     """
 
     def __init__(

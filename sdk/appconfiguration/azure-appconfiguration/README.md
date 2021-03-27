@@ -6,7 +6,7 @@ Modern programs, especially programs running in a cloud, generally have many com
 
 Use the client library for App Configuration to create and manage application configuration settings.
 
-[Source code]() | [Package (Pypi)][package] | [API reference documentation]() | [Product documentation][appconfig_docs]
+[Source code](https://github.com/Azure/azure-sdk-for-python/blob/master/sdk/appconfiguration/azure-appconfiguration) | [Package (Pypi)][package] | [API reference documentation](https://github.com/Azure/azure-sdk-for-python/blob/master/sdk/appconfiguration/azure-appconfiguration) | [Product documentation][appconfig_docs]
 
 ## Getting started
 
@@ -98,7 +98,7 @@ export AZURE_CLIENT_SECRET="random password"
 export AZURE_TENANT_ID="tenant id"
 ```
 
-Assign one of the applicable [App Configuration roles](https://github.com/Azure/AppConfiguration/blob/master/docs/REST/authorization/aad.md) to the service principal.
+Assign one of the applicable [App Configuration roles](https://docs.microsoft.com/azure/azure-app-configuration/rest-api-authorization-azure-ad) to the service principal.
 
 ##### Create a client
 Once the **AZURE_CLIENT_ID**, **AZURE_CLIENT_SECRET** and
@@ -144,7 +144,7 @@ etag : str
 
 The following sections provide several code snippets covering some of the most common Configuration Service tasks, including:
 
-* [Create a Configuration Setting](#create-a-configration-setting)
+* [Create a Configuration Setting](#create-a-configuration-setting)
 * [Get a Configuration Setting](#get-a-configuration-setting)
 * [Delete a Configuration Setting](#delete-a-configuration-setting)
 * [List Configuration Settings](#list-configuration-settings)
@@ -303,3 +303,7 @@ additional questions or comments.
 [configuration_store]: https://azure.microsoft.com/services/app-configuration/
 [default_cred_ref]: https://aka.ms/azsdk-python-identity-default-cred-ref
 [azure_identity]: https://github.com/Azure/azure-sdk-for-python/tree/master/sdk/identity/azure-identity
+[cla]: https://cla.microsoft.com
+[code_of_conduct]: https://opensource.microsoft.com/codeofconduct/
+[coc_faq]: https://opensource.microsoft.com/codeofconduct/faq/
+[coc_contact]: mailto:opencode@microsoft.com

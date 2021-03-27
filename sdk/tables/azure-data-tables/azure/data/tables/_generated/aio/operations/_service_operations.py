@@ -8,11 +8,11 @@
 from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 import warnings
 
-from azure.core.exceptions import HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import AsyncHttpResponse, HttpRequest
 
-from ... import models
+from ... import models as _models
 
 T = TypeVar('T')
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
@@ -31,7 +31,7 @@ class ServiceOperations:
     :param deserializer: An object model deserializer.
     """
 
-    models = models
+    models = _models
 
     def __init__(self, client, config, serializer, deserializer) -> None:
         self._client = client
@@ -41,7 +41,7 @@ class ServiceOperations:
 
     async def set_properties(
         self,
-        table_service_properties: "models.TableServiceProperties",
+        table_service_properties: "_models.TableServiceProperties",
         timeout: Optional[int] = None,
         request_id_parameter: Optional[str] = None,
         **kwargs
@@ -62,7 +62,9 @@ class ServiceOperations:
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         restype = "service"
         comp = "properties"
@@ -100,7 +102,7 @@ class ServiceOperations:
 
         if response.status_code not in [202]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -118,7 +120,7 @@ class ServiceOperations:
         timeout: Optional[int] = None,
         request_id_parameter: Optional[str] = None,
         **kwargs
-    ) -> "models.TableServiceProperties":
+    ) -> "_models.TableServiceProperties":
         """Gets the properties of an account's Table service, including properties for Analytics and CORS
         (Cross-Origin Resource Sharing) rules.
 
@@ -132,8 +134,10 @@ class ServiceOperations:
         :rtype: ~azure.data.tables.models.TableServiceProperties
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.TableServiceProperties"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.TableServiceProperties"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         restype = "service"
         comp = "properties"
@@ -166,7 +170,7 @@ class ServiceOperations:
 
         if response.status_code not in [200]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -186,7 +190,7 @@ class ServiceOperations:
         timeout: Optional[int] = None,
         request_id_parameter: Optional[str] = None,
         **kwargs
-    ) -> "models.TableServiceStats":
+    ) -> "_models.TableServiceStats":
         """Retrieves statistics related to replication for the Table service. It is only available on the
         secondary location endpoint when read-access geo-redundant replication is enabled for the
         account.
@@ -201,8 +205,10 @@ class ServiceOperations:
         :rtype: ~azure.data.tables.models.TableServiceStats
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.TableServiceStats"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.TableServiceStats"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         restype = "service"
         comp = "stats"
@@ -235,7 +241,7 @@ class ServiceOperations:
 
         if response.status_code not in [200]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}

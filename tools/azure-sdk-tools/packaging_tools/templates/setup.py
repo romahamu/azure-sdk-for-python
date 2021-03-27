@@ -70,6 +70,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'License :: OSI Approved :: MIT License',
     ],
     zip_safe=False,
@@ -90,7 +91,7 @@ setup(
         'azure-core>=1.6.0,<2.0.0',
         {%- endif %}
         {%- if need_azuremgmtcore %}
-        'azure-mgmt-core>=1.0.0,<2.0.0',
+        'azure-mgmt-core>=1.2.0,<2.0.0',
         {%- endif %}
     ],
     extras_require={

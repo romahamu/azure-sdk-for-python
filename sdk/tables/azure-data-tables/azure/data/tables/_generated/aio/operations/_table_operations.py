@@ -8,11 +8,11 @@
 from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar, Union
 import warnings
 
-from azure.core.exceptions import HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import AsyncHttpResponse, HttpRequest
 
-from ... import models
+from ... import models as _models
 
 T = TypeVar('T')
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
@@ -31,7 +31,7 @@ class TableOperations:
     :param deserializer: An object model deserializer.
     """
 
-    models = models
+    models = _models
 
     def __init__(self, client, config, serializer, deserializer) -> None:
         self._client = client
@@ -43,9 +43,9 @@ class TableOperations:
         self,
         request_id_parameter: Optional[str] = None,
         next_table_name: Optional[str] = None,
-        query_options: Optional["models.QueryOptions"] = None,
+        query_options: Optional["_models.QueryOptions"] = None,
         **kwargs
-    ) -> "models.TableQueryResponse":
+    ) -> "_models.TableQueryResponse":
         """Queries tables under the given account.
 
         :param request_id_parameter: Provides a client-generated, opaque value with a 1 KB character
@@ -60,8 +60,10 @@ class TableOperations:
         :rtype: ~azure.data.tables.models.TableQueryResponse
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.TableQueryResponse"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.TableQueryResponse"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         
         _format = None
@@ -110,8 +112,7 @@ class TableOperations:
 
         if response.status_code not in [200]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
-            raise HttpResponseError(response=response, model=error)
+            raise HttpResponseError(response=response)
 
         response_headers = {}
         response_headers['x-ms-client-request-id']=self._deserialize('str', response.headers.get('x-ms-client-request-id'))
@@ -129,12 +130,12 @@ class TableOperations:
 
     async def create(
         self,
-        table_properties: "models.TableProperties",
+        table_properties: "_models.TableProperties",
         request_id_parameter: Optional[str] = None,
-        response_preference: Optional[Union[str, "models.ResponseFormat"]] = None,
-        query_options: Optional["models.QueryOptions"] = None,
+        response_preference: Optional[Union[str, "_models.ResponseFormat"]] = None,
+        query_options: Optional["_models.QueryOptions"] = None,
         **kwargs
-    ) -> Optional["models.TableResponse"]:
+    ) -> Optional["_models.TableResponse"]:
         """Creates a new table under the given account.
 
         :param table_properties: The Table properties.
@@ -152,8 +153,10 @@ class TableOperations:
         :rtype: ~azure.data.tables.models.TableResponse or None
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[Optional["models.TableResponse"]]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType[Optional["_models.TableResponse"]]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         
         _format = None
@@ -195,7 +198,7 @@ class TableOperations:
 
         if response.status_code not in [201, 204]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -240,7 +243,9 @@ class TableOperations:
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         accept = "application/json"
 
@@ -268,7 +273,7 @@ class TableOperations:
 
         if response.status_code not in [204]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -289,9 +294,9 @@ class TableOperations:
         request_id_parameter: Optional[str] = None,
         next_partition_key: Optional[str] = None,
         next_row_key: Optional[str] = None,
-        query_options: Optional["models.QueryOptions"] = None,
+        query_options: Optional["_models.QueryOptions"] = None,
         **kwargs
-    ) -> "models.TableEntityQueryResponse":
+    ) -> "_models.TableEntityQueryResponse":
         """Queries entities in a table.
 
         :param table: The name of the table.
@@ -312,8 +317,10 @@ class TableOperations:
         :rtype: ~azure.data.tables.models.TableEntityQueryResponse
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.TableEntityQueryResponse"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.TableEntityQueryResponse"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         
         _format = None
@@ -367,7 +374,7 @@ class TableOperations:
 
         if response.status_code not in [200]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -385,17 +392,17 @@ class TableOperations:
         return deserialized
     query_entities.metadata = {'url': '/{table}()'}  # type: ignore
 
-    async def query_entities_with_partition_and_row_key(
+    async def query_entity_with_partition_and_row_key(
         self,
         table: str,
         partition_key: str,
         row_key: str,
         timeout: Optional[int] = None,
         request_id_parameter: Optional[str] = None,
-        query_options: Optional["models.QueryOptions"] = None,
+        query_options: Optional["_models.QueryOptions"] = None,
         **kwargs
     ) -> Dict[str, object]:
-        """Queries entities in a table.
+        """Queries a single entity in a table.
 
         :param table: The name of the table.
         :type table: str
@@ -416,7 +423,9 @@ class TableOperations:
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[Dict[str, object]]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         
         _format = None
@@ -430,7 +439,7 @@ class TableOperations:
         accept = "application/json;odata=minimalmetadata"
 
         # Construct URL
-        url = self.query_entities_with_partition_and_row_key.metadata['url']  # type: ignore
+        url = self.query_entity_with_partition_and_row_key.metadata['url']  # type: ignore
         path_format_arguments = {
             'url': self._serialize.url("self._config.url", self._config.url, 'str', skip_quote=True),
             'table': self._serialize.url("table", table, 'str'),
@@ -464,7 +473,7 @@ class TableOperations:
 
         if response.status_code not in [200]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -481,7 +490,7 @@ class TableOperations:
             return cls(pipeline_response, deserialized, response_headers)
 
         return deserialized
-    query_entities_with_partition_and_row_key.metadata = {'url': '/{table}(PartitionKey=\'{partitionKey}\',RowKey=\'{rowKey}\')'}  # type: ignore
+    query_entity_with_partition_and_row_key.metadata = {'url': '/{table}(PartitionKey=\'{partitionKey}\',RowKey=\'{rowKey}\')'}  # type: ignore
 
     async def update_entity(
         self,
@@ -492,7 +501,7 @@ class TableOperations:
         request_id_parameter: Optional[str] = None,
         if_match: Optional[str] = None,
         table_entity_properties: Optional[Dict[str, object]] = None,
-        query_options: Optional["models.QueryOptions"] = None,
+        query_options: Optional["_models.QueryOptions"] = None,
         **kwargs
     ) -> None:
         """Update entity in a table.
@@ -523,7 +532,9 @@ class TableOperations:
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         
         _format = None
@@ -573,7 +584,7 @@ class TableOperations:
 
         if response.status_code not in [204]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -597,7 +608,7 @@ class TableOperations:
         request_id_parameter: Optional[str] = None,
         if_match: Optional[str] = None,
         table_entity_properties: Optional[Dict[str, object]] = None,
-        query_options: Optional["models.QueryOptions"] = None,
+        query_options: Optional["_models.QueryOptions"] = None,
         **kwargs
     ) -> None:
         """Merge entity in a table.
@@ -628,7 +639,9 @@ class TableOperations:
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         
         _format = None
@@ -678,7 +691,7 @@ class TableOperations:
 
         if response.status_code not in [204]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -701,7 +714,7 @@ class TableOperations:
         if_match: str,
         timeout: Optional[int] = None,
         request_id_parameter: Optional[str] = None,
-        query_options: Optional["models.QueryOptions"] = None,
+        query_options: Optional["_models.QueryOptions"] = None,
         **kwargs
     ) -> None:
         """Deletes the specified entity in a table.
@@ -729,7 +742,9 @@ class TableOperations:
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         
         _format = None
@@ -770,7 +785,7 @@ class TableOperations:
 
         if response.status_code not in [204]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -789,9 +804,9 @@ class TableOperations:
         table: str,
         timeout: Optional[int] = None,
         request_id_parameter: Optional[str] = None,
-        response_preference: Optional[Union[str, "models.ResponseFormat"]] = None,
+        response_preference: Optional[Union[str, "_models.ResponseFormat"]] = None,
         table_entity_properties: Optional[Dict[str, object]] = None,
-        query_options: Optional["models.QueryOptions"] = None,
+        query_options: Optional["_models.QueryOptions"] = None,
         **kwargs
     ) -> Optional[Dict[str, object]]:
         """Insert entity in a table.
@@ -816,7 +831,9 @@ class TableOperations:
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[Optional[Dict[str, object]]]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         
         _format = None
@@ -864,7 +881,7 @@ class TableOperations:
 
         if response.status_code not in [201, 204]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -900,7 +917,7 @@ class TableOperations:
         timeout: Optional[int] = None,
         request_id_parameter: Optional[str] = None,
         **kwargs
-    ) -> List["models.SignedIdentifier"]:
+    ) -> List["_models.SignedIdentifier"]:
         """Retrieves details about any stored access policies specified on the table that may be used with
         Shared Access Signatures.
 
@@ -916,8 +933,10 @@ class TableOperations:
         :rtype: list[~azure.data.tables.models.SignedIdentifier]
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[List["models.SignedIdentifier"]]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType[List["_models.SignedIdentifier"]]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         comp = "acl"
         accept = "application/xml"
@@ -949,7 +968,7 @@ class TableOperations:
 
         if response.status_code not in [200]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}
@@ -970,7 +989,7 @@ class TableOperations:
         table: str,
         timeout: Optional[int] = None,
         request_id_parameter: Optional[str] = None,
-        table_acl: Optional[List["models.SignedIdentifier"]] = None,
+        table_acl: Optional[List["_models.SignedIdentifier"]] = None,
         **kwargs
     ) -> None:
         """Sets stored access policies for the table that may be used with Shared Access Signatures.
@@ -990,7 +1009,9 @@ class TableOperations:
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         comp = "acl"
         content_type = kwargs.pop("content_type", "application/xml")
@@ -1031,7 +1052,7 @@ class TableOperations:
 
         if response.status_code not in [204]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize(models.TableServiceError, response)
+            error = self._deserialize(_models.TableServiceError, response)
             raise HttpResponseError(response=response, model=error)
 
         response_headers = {}

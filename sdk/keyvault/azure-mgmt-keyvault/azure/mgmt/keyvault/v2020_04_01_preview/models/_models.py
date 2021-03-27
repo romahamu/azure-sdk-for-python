@@ -461,8 +461,8 @@ class ManagedHsmProperties(msrest.serialization.Model):
     :param initial_admin_object_ids: Array of initial administrators object ids for this managed
      hsm pool.
     :type initial_admin_object_ids: list[str]
-    :param hsm_pool_uri: The URI of the managed hsm pool for performing operations on keys.
-    :type hsm_pool_uri: str
+    :param hsm_uri: The URI of the managed hsm pool for performing operations on keys.
+    :type hsm_uri: str
     :param enable_soft_delete: Property to specify whether the 'soft delete' functionality is
      enabled for this managed HSM pool. If it's not set to any value(true or false) when creating
      new managed HSM pool, it will be set to true by default. Once set to true, it cannot be
@@ -496,7 +496,7 @@ class ManagedHsmProperties(msrest.serialization.Model):
     _attribute_map = {
         'tenant_id': {'key': 'tenantId', 'type': 'str'},
         'initial_admin_object_ids': {'key': 'initialAdminObjectIds', 'type': '[str]'},
-        'hsm_pool_uri': {'key': 'hsmPoolUri', 'type': 'str'},
+        'hsm_uri': {'key': 'hsmUri', 'type': 'str'},
         'enable_soft_delete': {'key': 'enableSoftDelete', 'type': 'bool'},
         'soft_delete_retention_in_days': {'key': 'softDeleteRetentionInDays', 'type': 'int'},
         'enable_purge_protection': {'key': 'enablePurgeProtection', 'type': 'bool'},
@@ -512,7 +512,7 @@ class ManagedHsmProperties(msrest.serialization.Model):
         super(ManagedHsmProperties, self).__init__(**kwargs)
         self.tenant_id = kwargs.get('tenant_id', None)
         self.initial_admin_object_ids = kwargs.get('initial_admin_object_ids', None)
-        self.hsm_pool_uri = kwargs.get('hsm_pool_uri', None)
+        self.hsm_uri = kwargs.get('hsm_uri', None)
         self.enable_soft_delete = kwargs.get('enable_soft_delete', True)
         self.soft_delete_retention_in_days = kwargs.get('soft_delete_retention_in_days', 90)
         self.enable_purge_protection = kwargs.get('enable_purge_protection', None)
@@ -524,19 +524,17 @@ class ManagedHsmProperties(msrest.serialization.Model):
 class ManagedHsmSku(msrest.serialization.Model):
     """SKU details.
 
-    Variables are only populated by the server, and will be ignored when sending a request.
-
     All required parameters must be populated in order to send to Azure.
 
-    :ivar family: Required. SKU Family of the managed HSM Pool. Default value: "B".
-    :vartype family: str
+    :param family: Required. SKU Family of the managed HSM Pool. Possible values include: "B".
+    :type family: str or ~azure.mgmt.keyvault.v2020_04_01_preview.models.ManagedHsmSkuFamily
     :param name: Required. SKU of the managed HSM Pool. Possible values include: "Standard_B1",
      "Custom_B32".
     :type name: str or ~azure.mgmt.keyvault.v2020_04_01_preview.models.ManagedHsmSkuName
     """
 
     _validation = {
-        'family': {'required': True, 'constant': True},
+        'family': {'required': True},
         'name': {'required': True},
     }
 
@@ -545,13 +543,12 @@ class ManagedHsmSku(msrest.serialization.Model):
         'name': {'key': 'name', 'type': 'str'},
     }
 
-    family = "B"
-
     def __init__(
         self,
         **kwargs
     ):
         super(ManagedHsmSku, self).__init__(**kwargs)
+        self.family = kwargs['family']
         self.name = kwargs['name']
 
 
@@ -1020,19 +1017,17 @@ class ServiceSpecification(msrest.serialization.Model):
 class Sku(msrest.serialization.Model):
     """SKU details.
 
-    Variables are only populated by the server, and will be ignored when sending a request.
-
     All required parameters must be populated in order to send to Azure.
 
-    :ivar family: Required. SKU family name. Default value: "A".
-    :vartype family: str
+    :param family: Required. SKU family name. Possible values include: "A".
+    :type family: str or ~azure.mgmt.keyvault.v2020_04_01_preview.models.SkuFamily
     :param name: Required. SKU name to specify whether the key vault is a standard vault or a
      premium vault. Possible values include: "standard", "premium".
     :type name: str or ~azure.mgmt.keyvault.v2020_04_01_preview.models.SkuName
     """
 
     _validation = {
-        'family': {'required': True, 'constant': True},
+        'family': {'required': True},
         'name': {'required': True},
     }
 
@@ -1041,13 +1036,12 @@ class Sku(msrest.serialization.Model):
         'name': {'key': 'name', 'type': 'str'},
     }
 
-    family = "A"
-
     def __init__(
         self,
         **kwargs
     ):
         super(Sku, self).__init__(**kwargs)
+        self.family = kwargs['family']
         self.name = kwargs['name']
 
 

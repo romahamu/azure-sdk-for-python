@@ -8,7 +8,7 @@
 from typing import TYPE_CHECKING
 import warnings
 
-from azure.core.exceptions import HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
 from azure.core.paging import ItemPaged
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import HttpRequest, HttpResponse
@@ -16,7 +16,7 @@ from azure.core.polling import LROPoller, NoPolling, PollingMethod
 from azure.mgmt.core.exceptions import ARMErrorFormat
 from azure.mgmt.core.polling.arm_polling import ARMPolling
 
-from .. import models
+from .. import models as _models
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
@@ -39,7 +39,7 @@ class ResourcesOperations(object):
     :param deserializer: An object model deserializer.
     """
 
-    models = models
+    models = _models
 
     def __init__(self, client, config, serializer, deserializer):
         self._client = client
@@ -55,7 +55,7 @@ class ResourcesOperations(object):
         top=None,  # type: Optional[int]
         **kwargs  # type: Any
     ):
-        # type: (...) -> Iterable["models.ResourceListResult"]
+        # type: (...) -> Iterable["_models.ResourceListResult"]
         """Get all the resources for a resource group.
 
         :param resource_group_name: The resource group with the resources to get.
@@ -63,8 +63,8 @@ class ResourcesOperations(object):
         :param filter: The filter to apply on the operation.
         :type filter: str
         :param expand: Comma-separated list of additional properties to be included in the response.
-     Valid values include ``createdTime``\ , ``changedTime`` and ``provisioningState``. For example,
-     ``$expand=createdTime,changedTime``.
+         Valid values include ``createdTime``\ , ``changedTime`` and ``provisioningState``. For example,
+         ``$expand=createdTime,changedTime``.
         :type expand: str
         :param top: The number of results to return. If null is passed, returns all resources.
         :type top: int
@@ -73,12 +73,19 @@ class ResourcesOperations(object):
         :rtype: ~azure.core.paging.ItemPaged[~azure.mgmt.resource.resources.v2017_05_10.models.ResourceListResult]
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.ResourceListResult"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.ResourceListResult"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
+        accept = "application/json"
 
         def prepare_request(next_link=None):
+            # Construct headers
+            header_parameters = {}  # type: Dict[str, Any]
+            header_parameters['Accept'] = self._serialize.header("accept", accept, 'str')
+
             if not next_link:
                 # Construct URL
                 url = self.list_by_resource_group.metadata['url']  # type: ignore
@@ -97,15 +104,11 @@ class ResourcesOperations(object):
                     query_parameters['$top'] = self._serialize.query("top", top, 'int')
                 query_parameters['api-version'] = self._serialize.query("api_version", api_version, 'str')
 
+                request = self._client.get(url, query_parameters, header_parameters)
             else:
                 url = next_link
                 query_parameters = {}  # type: Dict[str, Any]
-            # Construct headers
-            header_parameters = {}  # type: Dict[str, Any]
-            header_parameters['Accept'] = 'application/json'
-
-            # Construct and send request
-            request = self._client.get(url, query_parameters, header_parameters)
+                request = self._client.get(url, query_parameters, header_parameters)
             return request
 
         def extract_data(pipeline_response):
@@ -135,12 +138,14 @@ class ResourcesOperations(object):
     def _move_resources_initial(
         self,
         source_resource_group_name,  # type: str
-        parameters,  # type: "models.ResourcesMoveInfo"
+        parameters,  # type: "_models.ResourcesMoveInfo"
         **kwargs  # type: Any
     ):
         # type: (...) -> None
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
         content_type = kwargs.pop("content_type", "application/json")
@@ -161,12 +166,10 @@ class ResourcesOperations(object):
         header_parameters = {}  # type: Dict[str, Any]
         header_parameters['Content-Type'] = self._serialize.header("content_type", content_type, 'str')
 
-        # Construct and send request
         body_content_kwargs = {}  # type: Dict[str, Any]
         body_content = self._serialize.body(parameters, 'ResourcesMoveInfo')
         body_content_kwargs['content'] = body_content
         request = self._client.post(url, query_parameters, header_parameters, **body_content_kwargs)
-
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
 
@@ -182,19 +185,19 @@ class ResourcesOperations(object):
     def begin_move_resources(
         self,
         source_resource_group_name,  # type: str
-        parameters,  # type: "models.ResourcesMoveInfo"
+        parameters,  # type: "_models.ResourcesMoveInfo"
         **kwargs  # type: Any
     ):
-        # type: (...) -> LROPoller
+        # type: (...) -> LROPoller[None]
         """Moves resources from one resource group to another resource group.
 
         The resources to move must be in the same source resource group. The target resource group may
-    be in a different subscription. When moving resources, both the source group and the target
-    group are locked for the duration of the operation. Write and delete operations are blocked on
-    the groups until the move completes.
+        be in a different subscription. When moving resources, both the source group and the target
+        group are locked for the duration of the operation. Write and delete operations are blocked on
+        the groups until the move completes.
 
         :param source_resource_group_name: The name of the resource group containing the resources to
-     move.
+         move.
         :type source_resource_group_name: str
         :param parameters: Parameters for moving resources.
         :type parameters: ~azure.mgmt.resource.resources.v2017_05_10.models.ResourcesMoveInfo
@@ -230,7 +233,12 @@ class ResourcesOperations(object):
             if cls:
                 return cls(pipeline_response, None, {})
 
-        if polling is True: polling_method = ARMPolling(lro_delay,  **kwargs)
+        path_format_arguments = {
+            'sourceResourceGroupName': self._serialize.url("source_resource_group_name", source_resource_group_name, 'str', max_length=90, min_length=1, pattern=r'^[-\w\._\(\)]+$'),
+            'subscriptionId': self._serialize.url("self._config.subscription_id", self._config.subscription_id, 'str'),
+        }
+
+        if polling is True: polling_method = ARMPolling(lro_delay, path_format_arguments=path_format_arguments,  **kwargs)
         elif polling is False: polling_method = NoPolling()
         else: polling_method = polling
         if cont_token:
@@ -247,12 +255,14 @@ class ResourcesOperations(object):
     def _validate_move_resources_initial(
         self,
         source_resource_group_name,  # type: str
-        parameters,  # type: "models.ResourcesMoveInfo"
+        parameters,  # type: "_models.ResourcesMoveInfo"
         **kwargs  # type: Any
     ):
         # type: (...) -> None
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
         content_type = kwargs.pop("content_type", "application/json")
@@ -273,12 +283,10 @@ class ResourcesOperations(object):
         header_parameters = {}  # type: Dict[str, Any]
         header_parameters['Content-Type'] = self._serialize.header("content_type", content_type, 'str')
 
-        # Construct and send request
         body_content_kwargs = {}  # type: Dict[str, Any]
         body_content = self._serialize.body(parameters, 'ResourcesMoveInfo')
         body_content_kwargs['content'] = body_content
         request = self._client.post(url, query_parameters, header_parameters, **body_content_kwargs)
-
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
 
@@ -294,21 +302,21 @@ class ResourcesOperations(object):
     def begin_validate_move_resources(
         self,
         source_resource_group_name,  # type: str
-        parameters,  # type: "models.ResourcesMoveInfo"
+        parameters,  # type: "_models.ResourcesMoveInfo"
         **kwargs  # type: Any
     ):
-        # type: (...) -> LROPoller
+        # type: (...) -> LROPoller[None]
         """Validates whether resources can be moved from one resource group to another resource group.
 
         This operation checks whether the specified resources can be moved to the target. The resources
-    to move must be in the same source resource group. The target resource group may be in a
-    different subscription. If validation succeeds, it returns HTTP response code 204 (no content).
-    If validation fails, it returns HTTP response code 409 (Conflict) with an error message.
-    Retrieve the URL in the Location header value to check the result of the long-running
-    operation.
+        to move must be in the same source resource group. The target resource group may be in a
+        different subscription. If validation succeeds, it returns HTTP response code 204 (no content).
+        If validation fails, it returns HTTP response code 409 (Conflict) with an error message.
+        Retrieve the URL in the Location header value to check the result of the long-running
+        operation.
 
         :param source_resource_group_name: The name of the resource group containing the resources to
-     validate for move.
+         validate for move.
         :type source_resource_group_name: str
         :param parameters: Parameters for moving resources.
         :type parameters: ~azure.mgmt.resource.resources.v2017_05_10.models.ResourcesMoveInfo
@@ -344,7 +352,12 @@ class ResourcesOperations(object):
             if cls:
                 return cls(pipeline_response, None, {})
 
-        if polling is True: polling_method = ARMPolling(lro_delay,  **kwargs)
+        path_format_arguments = {
+            'sourceResourceGroupName': self._serialize.url("source_resource_group_name", source_resource_group_name, 'str', max_length=90, min_length=1, pattern=r'^[-\w\._\(\)]+$'),
+            'subscriptionId': self._serialize.url("self._config.subscription_id", self._config.subscription_id, 'str'),
+        }
+
+        if polling is True: polling_method = ARMPolling(lro_delay, path_format_arguments=path_format_arguments,  **kwargs)
         elif polling is False: polling_method = NoPolling()
         else: polling_method = polling
         if cont_token:
@@ -365,14 +378,14 @@ class ResourcesOperations(object):
         top=None,  # type: Optional[int]
         **kwargs  # type: Any
     ):
-        # type: (...) -> Iterable["models.ResourceListResult"]
+        # type: (...) -> Iterable["_models.ResourceListResult"]
         """Get all the resources in a subscription.
 
         :param filter: The filter to apply on the operation.
         :type filter: str
         :param expand: Comma-separated list of additional properties to be included in the response.
-     Valid values include ``createdTime``\ , ``changedTime`` and ``provisioningState``. For example,
-     ``$expand=createdTime,changedTime``.
+         Valid values include ``createdTime``\ , ``changedTime`` and ``provisioningState``. For example,
+         ``$expand=createdTime,changedTime``.
         :type expand: str
         :param top: The number of results to return. If null is passed, returns all resource groups.
         :type top: int
@@ -381,12 +394,19 @@ class ResourcesOperations(object):
         :rtype: ~azure.core.paging.ItemPaged[~azure.mgmt.resource.resources.v2017_05_10.models.ResourceListResult]
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.ResourceListResult"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.ResourceListResult"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
+        accept = "application/json"
 
         def prepare_request(next_link=None):
+            # Construct headers
+            header_parameters = {}  # type: Dict[str, Any]
+            header_parameters['Accept'] = self._serialize.header("accept", accept, 'str')
+
             if not next_link:
                 # Construct URL
                 url = self.list.metadata['url']  # type: ignore
@@ -404,15 +424,11 @@ class ResourcesOperations(object):
                     query_parameters['$top'] = self._serialize.query("top", top, 'int')
                 query_parameters['api-version'] = self._serialize.query("api_version", api_version, 'str')
 
+                request = self._client.get(url, query_parameters, header_parameters)
             else:
                 url = next_link
                 query_parameters = {}  # type: Dict[str, Any]
-            # Construct headers
-            header_parameters = {}  # type: Dict[str, Any]
-            header_parameters['Accept'] = 'application/json'
-
-            # Construct and send request
-            request = self._client.get(url, query_parameters, header_parameters)
+                request = self._client.get(url, query_parameters, header_parameters)
             return request
 
         def extract_data(pipeline_response):
@@ -448,7 +464,7 @@ class ResourcesOperations(object):
         resource_name,  # type: str
         **kwargs  # type: Any
     ):
-        # type: (...) -> None
+        # type: (...) -> bool
         """Checks whether a resource exists.
 
         :param resource_group_name: The name of the resource group containing the resource to check.
@@ -463,12 +479,14 @@ class ResourcesOperations(object):
         :param resource_name: The name of the resource to check whether it exists.
         :type resource_name: str
         :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: None, or the result of cls(response)
-        :rtype: None
+        :return: bool, or the result of cls(response)
+        :rtype: bool
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
 
@@ -491,7 +509,6 @@ class ResourcesOperations(object):
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
 
-        # Construct and send request
         request = self._client.head(url, query_parameters, header_parameters)
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
@@ -517,7 +534,9 @@ class ResourcesOperations(object):
     ):
         # type: (...) -> None
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
 
@@ -540,7 +559,6 @@ class ResourcesOperations(object):
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
 
-        # Construct and send request
         request = self._client.delete(url, query_parameters, header_parameters)
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
@@ -563,11 +581,11 @@ class ResourcesOperations(object):
         resource_name,  # type: str
         **kwargs  # type: Any
     ):
-        # type: (...) -> LROPoller
+        # type: (...) -> LROPoller[None]
         """Deletes a resource.
 
         :param resource_group_name: The name of the resource group that contains the resource to
-     delete. The name is case insensitive.
+         delete. The name is case insensitive.
         :type resource_group_name: str
         :param resource_provider_namespace: The namespace of the resource provider.
         :type resource_provider_namespace: str
@@ -612,7 +630,16 @@ class ResourcesOperations(object):
             if cls:
                 return cls(pipeline_response, None, {})
 
-        if polling is True: polling_method = ARMPolling(lro_delay,  **kwargs)
+        path_format_arguments = {
+            'resourceGroupName': self._serialize.url("resource_group_name", resource_group_name, 'str', max_length=90, min_length=1, pattern=r'^[-\w\._\(\)]+$'),
+            'resourceProviderNamespace': self._serialize.url("resource_provider_namespace", resource_provider_namespace, 'str'),
+            'parentResourcePath': self._serialize.url("parent_resource_path", parent_resource_path, 'str', skip_quote=True),
+            'resourceType': self._serialize.url("resource_type", resource_type, 'str', skip_quote=True),
+            'resourceName': self._serialize.url("resource_name", resource_name, 'str'),
+            'subscriptionId': self._serialize.url("self._config.subscription_id", self._config.subscription_id, 'str'),
+        }
+
+        if polling is True: polling_method = ARMPolling(lro_delay, path_format_arguments=path_format_arguments,  **kwargs)
         elif polling is False: polling_method = NoPolling()
         else: polling_method = polling
         if cont_token:
@@ -633,15 +660,18 @@ class ResourcesOperations(object):
         parent_resource_path,  # type: str
         resource_type,  # type: str
         resource_name,  # type: str
-        parameters,  # type: "models.GenericResource"
+        parameters,  # type: "_models.GenericResource"
         **kwargs  # type: Any
     ):
-        # type: (...) -> "models.GenericResource"
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        # type: (...) -> Optional["_models.GenericResource"]
+        cls = kwargs.pop('cls', None)  # type: ClsType[Optional["_models.GenericResource"]]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
         content_type = kwargs.pop("content_type", "application/json")
+        accept = "application/json"
 
         # Construct URL
         url = self._create_or_update_initial.metadata['url']  # type: ignore
@@ -662,14 +692,12 @@ class ResourcesOperations(object):
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
         header_parameters['Content-Type'] = self._serialize.header("content_type", content_type, 'str')
-        header_parameters['Accept'] = 'application/json'
+        header_parameters['Accept'] = self._serialize.header("accept", accept, 'str')
 
-        # Construct and send request
         body_content_kwargs = {}  # type: Dict[str, Any]
         body_content = self._serialize.body(parameters, 'GenericResource')
         body_content_kwargs['content'] = body_content
         request = self._client.put(url, query_parameters, header_parameters, **body_content_kwargs)
-
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
 
@@ -697,14 +725,14 @@ class ResourcesOperations(object):
         parent_resource_path,  # type: str
         resource_type,  # type: str
         resource_name,  # type: str
-        parameters,  # type: "models.GenericResource"
+        parameters,  # type: "_models.GenericResource"
         **kwargs  # type: Any
     ):
-        # type: (...) -> LROPoller
+        # type: (...) -> LROPoller["_models.GenericResource"]
         """Creates a resource.
 
         :param resource_group_name: The name of the resource group for the resource. The name is case
-     insensitive.
+         insensitive.
         :type resource_group_name: str
         :param resource_provider_namespace: The namespace of the resource provider.
         :type resource_provider_namespace: str
@@ -727,7 +755,7 @@ class ResourcesOperations(object):
         :raises ~azure.core.exceptions.HttpResponseError:
         """
         polling = kwargs.pop('polling', True)  # type: Union[bool, PollingMethod]
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.GenericResource"]
         lro_delay = kwargs.pop(
             'polling_interval',
             self._config.polling_interval
@@ -755,7 +783,16 @@ class ResourcesOperations(object):
                 return cls(pipeline_response, deserialized, {})
             return deserialized
 
-        if polling is True: polling_method = ARMPolling(lro_delay,  **kwargs)
+        path_format_arguments = {
+            'resourceGroupName': self._serialize.url("resource_group_name", resource_group_name, 'str', max_length=90, min_length=1, pattern=r'^[-\w\._\(\)]+$'),
+            'resourceProviderNamespace': self._serialize.url("resource_provider_namespace", resource_provider_namespace, 'str'),
+            'parentResourcePath': self._serialize.url("parent_resource_path", parent_resource_path, 'str', skip_quote=True),
+            'resourceType': self._serialize.url("resource_type", resource_type, 'str', skip_quote=True),
+            'resourceName': self._serialize.url("resource_name", resource_name, 'str'),
+            'subscriptionId': self._serialize.url("self._config.subscription_id", self._config.subscription_id, 'str'),
+        }
+
+        if polling is True: polling_method = ARMPolling(lro_delay, path_format_arguments=path_format_arguments,  **kwargs)
         elif polling is False: polling_method = NoPolling()
         else: polling_method = polling
         if cont_token:
@@ -776,15 +813,18 @@ class ResourcesOperations(object):
         parent_resource_path,  # type: str
         resource_type,  # type: str
         resource_name,  # type: str
-        parameters,  # type: "models.GenericResource"
+        parameters,  # type: "_models.GenericResource"
         **kwargs  # type: Any
     ):
-        # type: (...) -> "models.GenericResource"
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        # type: (...) -> Optional["_models.GenericResource"]
+        cls = kwargs.pop('cls', None)  # type: ClsType[Optional["_models.GenericResource"]]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
         content_type = kwargs.pop("content_type", "application/json")
+        accept = "application/json"
 
         # Construct URL
         url = self._update_initial.metadata['url']  # type: ignore
@@ -805,14 +845,12 @@ class ResourcesOperations(object):
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
         header_parameters['Content-Type'] = self._serialize.header("content_type", content_type, 'str')
-        header_parameters['Accept'] = 'application/json'
+        header_parameters['Accept'] = self._serialize.header("accept", accept, 'str')
 
-        # Construct and send request
         body_content_kwargs = {}  # type: Dict[str, Any]
         body_content = self._serialize.body(parameters, 'GenericResource')
         body_content_kwargs['content'] = body_content
         request = self._client.patch(url, query_parameters, header_parameters, **body_content_kwargs)
-
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
 
@@ -837,14 +875,14 @@ class ResourcesOperations(object):
         parent_resource_path,  # type: str
         resource_type,  # type: str
         resource_name,  # type: str
-        parameters,  # type: "models.GenericResource"
+        parameters,  # type: "_models.GenericResource"
         **kwargs  # type: Any
     ):
-        # type: (...) -> LROPoller
+        # type: (...) -> LROPoller["_models.GenericResource"]
         """Updates a resource.
 
         :param resource_group_name: The name of the resource group for the resource. The name is case
-     insensitive.
+         insensitive.
         :type resource_group_name: str
         :param resource_provider_namespace: The namespace of the resource provider.
         :type resource_provider_namespace: str
@@ -867,7 +905,7 @@ class ResourcesOperations(object):
         :raises ~azure.core.exceptions.HttpResponseError:
         """
         polling = kwargs.pop('polling', True)  # type: Union[bool, PollingMethod]
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.GenericResource"]
         lro_delay = kwargs.pop(
             'polling_interval',
             self._config.polling_interval
@@ -895,7 +933,16 @@ class ResourcesOperations(object):
                 return cls(pipeline_response, deserialized, {})
             return deserialized
 
-        if polling is True: polling_method = ARMPolling(lro_delay,  **kwargs)
+        path_format_arguments = {
+            'resourceGroupName': self._serialize.url("resource_group_name", resource_group_name, 'str', max_length=90, min_length=1, pattern=r'^[-\w\._\(\)]+$'),
+            'resourceProviderNamespace': self._serialize.url("resource_provider_namespace", resource_provider_namespace, 'str'),
+            'parentResourcePath': self._serialize.url("parent_resource_path", parent_resource_path, 'str', skip_quote=True),
+            'resourceType': self._serialize.url("resource_type", resource_type, 'str', skip_quote=True),
+            'resourceName': self._serialize.url("resource_name", resource_name, 'str'),
+            'subscriptionId': self._serialize.url("self._config.subscription_id", self._config.subscription_id, 'str'),
+        }
+
+        if polling is True: polling_method = ARMPolling(lro_delay, path_format_arguments=path_format_arguments,  **kwargs)
         elif polling is False: polling_method = NoPolling()
         else: polling_method = polling
         if cont_token:
@@ -918,7 +965,7 @@ class ResourcesOperations(object):
         resource_name,  # type: str
         **kwargs  # type: Any
     ):
-        # type: (...) -> "models.GenericResource"
+        # type: (...) -> "_models.GenericResource"
         """Gets a resource.
 
         :param resource_group_name: The name of the resource group containing the resource to get. The
@@ -937,10 +984,13 @@ class ResourcesOperations(object):
         :rtype: ~azure.mgmt.resource.resources.v2017_05_10.models.GenericResource
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.GenericResource"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
+        accept = "application/json"
 
         # Construct URL
         url = self.get.metadata['url']  # type: ignore
@@ -960,9 +1010,8 @@ class ResourcesOperations(object):
 
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
-        header_parameters['Accept'] = 'application/json'
+        header_parameters['Accept'] = self._serialize.header("accept", accept, 'str')
 
-        # Construct and send request
         request = self._client.get(url, query_parameters, header_parameters)
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
@@ -984,7 +1033,7 @@ class ResourcesOperations(object):
         resource_id,  # type: str
         **kwargs  # type: Any
     ):
-        # type: (...) -> None
+        # type: (...) -> bool
         """Checks by ID whether a resource exists.
 
         :param resource_id: The fully qualified ID of the resource, including the resource name and
@@ -992,12 +1041,14 @@ class ResourcesOperations(object):
          name}/{resource-provider-namespace}/{resource-type}/{resource-name}.
         :type resource_id: str
         :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: None, or the result of cls(response)
-        :rtype: None
+        :return: bool, or the result of cls(response)
+        :rtype: bool
         :raises: ~azure.core.exceptions.HttpResponseError
         """
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
 
@@ -1015,7 +1066,6 @@ class ResourcesOperations(object):
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
 
-        # Construct and send request
         request = self._client.head(url, query_parameters, header_parameters)
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
@@ -1037,7 +1087,9 @@ class ResourcesOperations(object):
     ):
         # type: (...) -> None
         cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
 
@@ -1055,7 +1107,6 @@ class ResourcesOperations(object):
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
 
-        # Construct and send request
         request = self._client.delete(url, query_parameters, header_parameters)
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
@@ -1074,12 +1125,12 @@ class ResourcesOperations(object):
         resource_id,  # type: str
         **kwargs  # type: Any
     ):
-        # type: (...) -> LROPoller
+        # type: (...) -> LROPoller[None]
         """Deletes a resource by ID.
 
         :param resource_id: The fully qualified ID of the resource, including the resource name and
-     resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-
-     name}/{resource-provider-namespace}/{resource-type}/{resource-name}.
+         resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-
+         name}/{resource-provider-namespace}/{resource-type}/{resource-name}.
         :type resource_id: str
         :keyword callable cls: A custom type or function that will be passed the direct response
         :keyword str continuation_token: A continuation token to restart a poller from a saved state.
@@ -1112,7 +1163,11 @@ class ResourcesOperations(object):
             if cls:
                 return cls(pipeline_response, None, {})
 
-        if polling is True: polling_method = ARMPolling(lro_delay,  **kwargs)
+        path_format_arguments = {
+            'resourceId': self._serialize.url("resource_id", resource_id, 'str', skip_quote=True),
+        }
+
+        if polling is True: polling_method = ARMPolling(lro_delay, path_format_arguments=path_format_arguments,  **kwargs)
         elif polling is False: polling_method = NoPolling()
         else: polling_method = polling
         if cont_token:
@@ -1129,15 +1184,18 @@ class ResourcesOperations(object):
     def _create_or_update_by_id_initial(
         self,
         resource_id,  # type: str
-        parameters,  # type: "models.GenericResource"
+        parameters,  # type: "_models.GenericResource"
         **kwargs  # type: Any
     ):
-        # type: (...) -> "models.GenericResource"
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        # type: (...) -> Optional["_models.GenericResource"]
+        cls = kwargs.pop('cls', None)  # type: ClsType[Optional["_models.GenericResource"]]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
         content_type = kwargs.pop("content_type", "application/json")
+        accept = "application/json"
 
         # Construct URL
         url = self._create_or_update_by_id_initial.metadata['url']  # type: ignore
@@ -1153,14 +1211,12 @@ class ResourcesOperations(object):
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
         header_parameters['Content-Type'] = self._serialize.header("content_type", content_type, 'str')
-        header_parameters['Accept'] = 'application/json'
+        header_parameters['Accept'] = self._serialize.header("accept", accept, 'str')
 
-        # Construct and send request
         body_content_kwargs = {}  # type: Dict[str, Any]
         body_content = self._serialize.body(parameters, 'GenericResource')
         body_content_kwargs['content'] = body_content
         request = self._client.put(url, query_parameters, header_parameters, **body_content_kwargs)
-
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
 
@@ -1184,15 +1240,15 @@ class ResourcesOperations(object):
     def begin_create_or_update_by_id(
         self,
         resource_id,  # type: str
-        parameters,  # type: "models.GenericResource"
+        parameters,  # type: "_models.GenericResource"
         **kwargs  # type: Any
     ):
-        # type: (...) -> LROPoller
+        # type: (...) -> LROPoller["_models.GenericResource"]
         """Create a resource by ID.
 
         :param resource_id: The fully qualified ID of the resource, including the resource name and
-     resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-
-     name}/{resource-provider-namespace}/{resource-type}/{resource-name}.
+         resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-
+         name}/{resource-provider-namespace}/{resource-type}/{resource-name}.
         :type resource_id: str
         :param parameters: Create or update resource parameters.
         :type parameters: ~azure.mgmt.resource.resources.v2017_05_10.models.GenericResource
@@ -1207,7 +1263,7 @@ class ResourcesOperations(object):
         :raises ~azure.core.exceptions.HttpResponseError:
         """
         polling = kwargs.pop('polling', True)  # type: Union[bool, PollingMethod]
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.GenericResource"]
         lro_delay = kwargs.pop(
             'polling_interval',
             self._config.polling_interval
@@ -1231,7 +1287,11 @@ class ResourcesOperations(object):
                 return cls(pipeline_response, deserialized, {})
             return deserialized
 
-        if polling is True: polling_method = ARMPolling(lro_delay,  **kwargs)
+        path_format_arguments = {
+            'resourceId': self._serialize.url("resource_id", resource_id, 'str', skip_quote=True),
+        }
+
+        if polling is True: polling_method = ARMPolling(lro_delay, path_format_arguments=path_format_arguments,  **kwargs)
         elif polling is False: polling_method = NoPolling()
         else: polling_method = polling
         if cont_token:
@@ -1248,15 +1308,18 @@ class ResourcesOperations(object):
     def _update_by_id_initial(
         self,
         resource_id,  # type: str
-        parameters,  # type: "models.GenericResource"
+        parameters,  # type: "_models.GenericResource"
         **kwargs  # type: Any
     ):
-        # type: (...) -> "models.GenericResource"
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        # type: (...) -> Optional["_models.GenericResource"]
+        cls = kwargs.pop('cls', None)  # type: ClsType[Optional["_models.GenericResource"]]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
         content_type = kwargs.pop("content_type", "application/json")
+        accept = "application/json"
 
         # Construct URL
         url = self._update_by_id_initial.metadata['url']  # type: ignore
@@ -1272,14 +1335,12 @@ class ResourcesOperations(object):
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
         header_parameters['Content-Type'] = self._serialize.header("content_type", content_type, 'str')
-        header_parameters['Accept'] = 'application/json'
+        header_parameters['Accept'] = self._serialize.header("accept", accept, 'str')
 
-        # Construct and send request
         body_content_kwargs = {}  # type: Dict[str, Any]
         body_content = self._serialize.body(parameters, 'GenericResource')
         body_content_kwargs['content'] = body_content
         request = self._client.patch(url, query_parameters, header_parameters, **body_content_kwargs)
-
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
 
@@ -1300,15 +1361,15 @@ class ResourcesOperations(object):
     def begin_update_by_id(
         self,
         resource_id,  # type: str
-        parameters,  # type: "models.GenericResource"
+        parameters,  # type: "_models.GenericResource"
         **kwargs  # type: Any
     ):
-        # type: (...) -> LROPoller
+        # type: (...) -> LROPoller["_models.GenericResource"]
         """Updates a resource by ID.
 
         :param resource_id: The fully qualified ID of the resource, including the resource name and
-     resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-
-     name}/{resource-provider-namespace}/{resource-type}/{resource-name}.
+         resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-
+         name}/{resource-provider-namespace}/{resource-type}/{resource-name}.
         :type resource_id: str
         :param parameters: Update resource parameters.
         :type parameters: ~azure.mgmt.resource.resources.v2017_05_10.models.GenericResource
@@ -1323,7 +1384,7 @@ class ResourcesOperations(object):
         :raises ~azure.core.exceptions.HttpResponseError:
         """
         polling = kwargs.pop('polling', True)  # type: Union[bool, PollingMethod]
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.GenericResource"]
         lro_delay = kwargs.pop(
             'polling_interval',
             self._config.polling_interval
@@ -1347,7 +1408,11 @@ class ResourcesOperations(object):
                 return cls(pipeline_response, deserialized, {})
             return deserialized
 
-        if polling is True: polling_method = ARMPolling(lro_delay,  **kwargs)
+        path_format_arguments = {
+            'resourceId': self._serialize.url("resource_id", resource_id, 'str', skip_quote=True),
+        }
+
+        if polling is True: polling_method = ARMPolling(lro_delay, path_format_arguments=path_format_arguments,  **kwargs)
         elif polling is False: polling_method = NoPolling()
         else: polling_method = polling
         if cont_token:
@@ -1366,7 +1431,7 @@ class ResourcesOperations(object):
         resource_id,  # type: str
         **kwargs  # type: Any
     ):
-        # type: (...) -> "models.GenericResource"
+        # type: (...) -> "_models.GenericResource"
         """Gets a resource by ID.
 
         :param resource_id: The fully qualified ID of the resource, including the resource name and
@@ -1378,10 +1443,13 @@ class ResourcesOperations(object):
         :rtype: ~azure.mgmt.resource.resources.v2017_05_10.models.GenericResource
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["models.GenericResource"]
-        error_map = {404: ResourceNotFoundError, 409: ResourceExistsError}
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.GenericResource"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
         error_map.update(kwargs.pop('error_map', {}))
         api_version = "2017-05-10"
+        accept = "application/json"
 
         # Construct URL
         url = self.get_by_id.metadata['url']  # type: ignore
@@ -1396,9 +1464,8 @@ class ResourcesOperations(object):
 
         # Construct headers
         header_parameters = {}  # type: Dict[str, Any]
-        header_parameters['Accept'] = 'application/json'
+        header_parameters['Accept'] = self._serialize.header("accept", accept, 'str')
 
-        # Construct and send request
         request = self._client.get(url, query_parameters, header_parameters)
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response

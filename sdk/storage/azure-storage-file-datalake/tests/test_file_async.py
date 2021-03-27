@@ -8,8 +8,10 @@
 import unittest
 from datetime import datetime, timedelta
 import asyncio
+import pytest
 
 from azure.core import MatchConditions
+from azure.core.credentials import AzureSasCredential
 
 from azure.core.exceptions import HttpResponseError, ResourceExistsError, ResourceNotFoundError, \
     ClientAuthenticationError, ResourceModifiedError
@@ -17,7 +19,6 @@ from azure.storage.filedatalake import ContentSettings, generate_account_sas, ge
     ResourceTypes, AccountSasPermissions, FileSasPermissions
 from azure.storage.filedatalake.aio import DataLakeServiceClient, FileSystemClient, DataLakeDirectoryClient, \
     DataLakeFileClient
-from azure.storage.filedatalake._generated.models import StorageErrorException
 from testcase import (
     StorageTestCase,
     record,
@@ -28,6 +29,8 @@ from testcase import (
 TEST_DIRECTORY_PREFIX = 'directory'
 TEST_FILE_PREFIX = 'file'
 FILE_PATH = 'file_output.temp.dat'
+
+
 # ------------------------------------------------------------------------------
 
 
@@ -110,6 +113,25 @@ class FileTest(StorageTestCase):
     def test_create_file_async(self):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self._test_create_file())
+
+    async def _test_file_exists(self):
+        # Arrange
+        directory_name = self._get_directory_reference()
+
+        directory_client = self.dsc.get_directory_client(self.file_system_name, directory_name)
+        await directory_client.create_directory()
+
+        file_client1 = directory_client.get_file_client('filename')
+        file_client2 = directory_client.get_file_client('nonexistentfile')
+        await file_client1.create_file()
+
+        self.assertTrue(await file_client1.exists())
+        self.assertFalse(await file_client2.exists())
+
+    @record
+    def test_file_exists(self):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._test_file_exists())
 
     async def _test_create_file_using_oauth_token_credential(self):
         # Arrange
@@ -266,6 +288,36 @@ class FileTest(StorageTestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self._test_flush_data_with_match_condition())
 
+    async def _test_upload_data_in_substreams(self):
+        # parallel upload cannot be recorded
+        if TestMode.need_recording_file(self.test_mode):
+            return
+
+        directory_name = self._get_directory_reference()
+
+        # Create a directory to put the file under that
+        directory_client = self.dsc.get_directory_client(self.file_system_name, directory_name)
+        await directory_client.create_directory()
+
+        file_client = directory_client.get_file_client('filename')
+        # Get 16MB data
+        raw_data = self.get_random_bytes(16 * 1024 * 1024)
+        # Ensure chunk size is greater than threshold (8MB > 4MB) - for optimized upload
+        await file_client.upload_data(raw_data, chunk_size=8 * 1024 * 1024, overwrite=True, max_concurrency=3)
+        data = await file_client.download_file()
+        downloaded_data = await data.readall()
+        self.assertEqual(raw_data, downloaded_data)
+
+        # Run on single thread
+        await file_client.upload_data(raw_data, chunk_size=8 * 1024 * 1024, overwrite=True)
+        data = await file_client.download_file()
+        downloaded_data = await data.readall()
+        self.assertEqual(raw_data, downloaded_data)
+
+    def test_upload_data_in_substreams(self):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._test_upload_data_in_substreams())
+
     async def _test_upload_data(self):
         # parallel upload cannot be recorded
         if TestMode.need_recording_file(self.test_mode):
@@ -418,7 +470,7 @@ class FileTest(StorageTestCase):
         token_credential = self.generate_async_oauth_token()
         service_client = DataLakeServiceClient(self._get_oauth_account_url(), credential=token_credential)
         user_delegation_key = await service_client.get_user_delegation_key(datetime.utcnow(),
-                                                                     datetime.utcnow() + timedelta(hours=1))
+                                                                           datetime.utcnow() + timedelta(hours=1))
 
         sas_token = generate_file_sas(file_client.account_name,
                                       file_client.file_system_name,
@@ -502,21 +554,26 @@ class FileTest(StorageTestCase):
             datetime.utcnow() + timedelta(hours=1),
         )
 
-        # read the created file which is under root directory
-        file_client = DataLakeFileClient(self.dsc.url, self.file_system_name, file_name, credential=token)
-        properties = await file_client.get_file_properties()
+        for credential in [token, AzureSasCredential(token)]:
+            # read the created file which is under root directory
+            file_client = DataLakeFileClient(self.dsc.url, self.file_system_name, file_name, credential=credential)
+            properties = await file_client.get_file_properties()
 
-        # make sure we can read the file properties
-        self.assertIsNotNone(properties)
+            # make sure we can read the file properties
+            self.assertIsNotNone(properties)
 
-        # try to write to the created file with the token
-        with self.assertRaises(HttpResponseError):
-            await file_client.append_data(b"abcd", 0, 4)
+            # try to write to the created file with the token
+            with self.assertRaises(HttpResponseError):
+                await file_client.append_data(b"abcd", 0, 4)
 
     @record
     def test_account_sas_async(self):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self._test_account_sas())
+
+    def test_account_sas_raises_if_sas_already_in_uri(self):
+        with self.assertRaises(ValueError):
+            DataLakeFileClient(self.dsc.url + "?sig=foo", self.file_system_name, "foo", credential=AzureSasCredential("?foo=bar"))
 
     async def _test_file_sas_only_applies_to_file_level(self):
         # SAS URL is calculated from storage key, so this test runs live only
@@ -539,7 +596,7 @@ class FileTest(StorageTestCase):
         )
 
         # read the created file which is under root directory
-        file_client = DataLakeFileClient(self.dsc.url, self.file_system_name, directory_name+'/'+file_name,
+        file_client = DataLakeFileClient(self.dsc.url, self.file_system_name, directory_name + '/' + file_name,
                                          credential=token)
         properties = await file_client.get_file_properties()
 
@@ -642,7 +699,7 @@ class FileTest(StorageTestCase):
         prop = await file_client.get_file_properties()
 
         # Act
-        response = await file_client.get_access_control(if_modified_since=prop['last_modified']-timedelta(minutes=15))
+        response = await file_client.get_access_control(if_modified_since=prop['last_modified'] - timedelta(minutes=15))
 
         # Assert
         self.assertIsNotNone(response)
@@ -660,7 +717,8 @@ class FileTest(StorageTestCase):
         content_settings = ContentSettings(
             content_language='spanish',
             content_disposition='inline')
-        file_client = await directory_client.create_file("newfile", metadata=metadata, content_settings=content_settings)
+        file_client = await directory_client.create_file("newfile", metadata=metadata,
+                                                         content_settings=content_settings)
         await file_client.append_data(b"abc", 0, 3)
         await file_client.flush_data(3)
         properties = await file_client.get_file_properties()
@@ -672,16 +730,93 @@ class FileTest(StorageTestCase):
         self.assertEqual(properties.content_settings.content_language, content_settings.content_language)
 
     @record
+    def test_set_access_control_recursive_async(self):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._test_set_access_control_recursive_async())
+
+    async def _test_set_access_control_recursive_async(self):
+        acl = 'user::rwx,group::r-x,other::rwx'
+        file_client = await self._create_file_and_return_client()
+
+        summary = await file_client.set_access_control_recursive(acl=acl)
+
+        # Assert
+        self.assertEqual(summary.counters.directories_successful, 0)
+        self.assertEqual(summary.counters.files_successful, 1)
+        self.assertEqual(summary.counters.failure_count, 0)
+        access_control = await file_client.get_access_control()
+        self.assertIsNotNone(access_control)
+        self.assertEqual(acl, access_control['acl'])
+
+    @record
+    def test_update_access_control_recursive_async(self):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._test_update_access_control_recursive_async())
+
+    async def _test_update_access_control_recursive_async(self):
+        acl = 'user::rwx,group::r-x,other::rwx'
+        file_client = await self._create_file_and_return_client()
+
+        summary = await file_client.update_access_control_recursive(acl=acl)
+
+        # Assert
+        self.assertEqual(summary.counters.directories_successful, 0)
+        self.assertEqual(summary.counters.files_successful, 1)
+        self.assertEqual(summary.counters.failure_count, 0)
+        access_control = await file_client.get_access_control()
+        self.assertIsNotNone(access_control)
+        self.assertEqual(acl, access_control['acl'])
+
+    @record
+    def test_remove_access_control_recursive_async(self):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._test_remove_access_control_recursive_async())
+
+    async def _test_remove_access_control_recursive_async(self):
+        acl = "mask," + "default:user,default:group," + \
+              "user:ec3595d6-2c17-4696-8caa-7e139758d24a,group:ec3595d6-2c17-4696-8caa-7e139758d24a," + \
+              "default:user:ec3595d6-2c17-4696-8caa-7e139758d24a,default:group:ec3595d6-2c17-4696-8caa-7e139758d24a"
+        file_client = await self._create_file_and_return_client()
+        summary = await file_client.remove_access_control_recursive(acl=acl)
+
+        # Assert
+        self.assertEqual(summary.counters.directories_successful, 0)
+        self.assertEqual(summary.counters.files_successful, 1)
+        self.assertEqual(summary.counters.failure_count, 0)
+
+    @record
     def test_get_properties_async(self):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self._test_get_properties())
+
+    async def _test_set_expiry(self):
+        # Arrange
+        directory_client = await self._create_directory_and_return_client()
+
+        metadata = {'hello': 'world', 'number': '42'}
+        content_settings = ContentSettings(
+            content_language='spanish',
+            content_disposition='inline')
+        expires_on = datetime.utcnow() + timedelta(hours=1)
+        file_client = await directory_client.create_file("newfile", metadata=metadata, content_settings=content_settings)
+        await file_client.set_file_expiry("Absolute", expires_on=expires_on)
+        properties = await file_client.get_file_properties()
+
+        # Assert
+        self.assertTrue(properties)
+        self.assertIsNotNone(properties.expiry_time)
+
+    @record
+    def test_set_expiry_async(self):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._test_set_expiry())
 
     async def _test_rename_file_with_non_used_name(self):
         file_client = await self._create_file_and_return_client()
         data_bytes = b"abc"
         await file_client.append_data(data_bytes, 0, 3)
         await file_client.flush_data(3)
-        new_client = await file_client.rename_file(file_client.file_system_name+'/'+'newname')
+        new_client = await file_client.rename_file(file_client.file_system_name + '/' + 'newname')
 
         data = await (await new_client.download_file()).readall()
         self.assertEqual(data, data_bytes)
@@ -704,7 +839,7 @@ class FileTest(StorageTestCase):
         data_bytes = b"abc"
         await file_client.append_data(data_bytes, 0, 3)
         await file_client.flush_data(3)
-        new_client = await file_client.rename_file(file_client.file_system_name+'/'+existing_file_client.path_name)
+        new_client = await file_client.rename_file(file_client.file_system_name + '/' + existing_file_client.path_name)
         new_url = file_client.url
 
         data = await (await new_client.download_file()).readall()
@@ -725,7 +860,7 @@ class FileTest(StorageTestCase):
                                   None,
                                   "oldfile",
                                   self.settings.STORAGE_DATA_LAKE_ACCOUNT_KEY,
-                                  permission=FileSasPermissions(read=True, create=True, write=True, delete=True),
+                                  permission=FileSasPermissions(read=True, create=True, write=True, delete=True, move=True),
                                   expiry=datetime.utcnow() + timedelta(hours=1),
                                   )
 
@@ -775,7 +910,7 @@ class FileTest(StorageTestCase):
         await f4.append_data(b"file4", 0, 5)
         await f4.flush_data(5)
 
-        new_client = await f3.rename_file(f1.file_system_name+'/'+f1.path_name)
+        new_client = await f3.rename_file(f1.file_system_name + '/' + f1.path_name)
 
         self.assertEqual(await (await new_client.download_file()).readall(), b"file3")
 
@@ -793,6 +928,7 @@ class FileTest(StorageTestCase):
     def test_rename_file_will_not_change_existing_directory_async(self):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self._test_rename_file_will_not_change_existing_directory())
+
 
 # ------------------------------------------------------------------------------
 if __name__ == '__main__':

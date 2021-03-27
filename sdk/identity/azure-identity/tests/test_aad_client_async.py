@@ -6,14 +6,18 @@ import functools
 from unittest.mock import Mock, patch
 from urllib.parse import urlparse
 import time
-from azure.core.exceptions import ClientAuthenticationError
+
+from azure.core.exceptions import ClientAuthenticationError, ServiceRequestError
 from azure.identity._constants import EnvironmentVariables, DEFAULT_REFRESH_OFFSET, DEFAULT_TOKEN_REFRESH_RETRY_DELAY
+from azure.identity._internal import AadClientCertificate
 from azure.identity.aio._internal.aad_client import AadClient
 from azure.core.credentials import AccessToken
 from msal import TokenCache
 import pytest
 
 from helpers import build_aad_response, mock_response
+from helpers_async import get_completed_future
+from test_certificate_credential import CERT_PATH
 
 pytestmark = pytest.mark.asyncio
 
@@ -160,7 +164,7 @@ async def test_refresh_token():
 
 @pytest.mark.parametrize("authority", ("localhost", "https://localhost"))
 async def test_request_url(authority):
-    tenant_id = "expected_tenant"
+    tenant_id = "expected-tenant"
     parsed_authority = urlparse(authority)
     expected_netloc = parsed_authority.netloc or authority  # "localhost" parses to netloc "", path "localhost"
 
@@ -230,3 +234,31 @@ async def test_should_refresh():
     client._last_refresh_time = now - DEFAULT_TOKEN_REFRESH_RETRY_DELAY + 1
     should_refresh = client.should_refresh(token)
     assert not should_refresh
+
+
+async def test_retries_token_requests():
+    """The client should retry token requests"""
+
+    message = "can't connect"
+    transport = Mock(send=Mock(side_effect=ServiceRequestError(message)), sleep=get_completed_future)
+    client = AadClient("tenant-id", "client-id", transport=transport)
+
+    with pytest.raises(ServiceRequestError, match=message):
+        await client.obtain_token_by_authorization_code("", "", "")
+    assert transport.send.call_count > 1
+    transport.send.reset_mock()
+
+    with pytest.raises(ServiceRequestError, match=message):
+        await client.obtain_token_by_client_certificate("", AadClientCertificate(open(CERT_PATH, "rb").read()))
+    assert transport.send.call_count > 1
+    transport.send.reset_mock()
+
+    with pytest.raises(ServiceRequestError, match=message):
+        await client.obtain_token_by_client_secret("", "")
+    assert transport.send.call_count > 1
+    transport.send.reset_mock()
+
+    with pytest.raises(ServiceRequestError, match=message):
+        await client.obtain_token_by_refresh_token("", "")
+    assert transport.send.call_count > 1
+    transport.send.reset_mock()

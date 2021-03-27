@@ -8,7 +8,7 @@ products:
 urlFragment: eventhub-checkpointstore-aio-samples
 ---
 
-# Azure Event Hubs client library samples with persistent checkpointing for Python
+# Azure Event Hubs client library async samples with persistent checkpointing for Python
 
 These sample programs show how to use the async Python client libraries for Azure Event Hubs in some common scenarios.
 
@@ -42,5 +42,5 @@ pip install azure-eventhub-checkpointstoreblob-aio
 
 ## Next steps
 
-Check out the [API reference documentation](https://azuresdkdocs.blob.core.windows.net/$web/python/azure-eventhub/latest/azure.eventhub.aio.html) to learn more about
+Check out the [API reference documentation](https://azuresdkdocs.blob.core.windows.net/$web/python/azure-eventhub/5.3.1/azure.eventhub.aio.html) to learn more about
 what you can do with the Azure Event Hubs client library.

@@ -1,5 +1,60 @@
 # Release History
 
+## 16.0.0 (2021-02-26)
+
+**Features**
+
+  - Model ParameterDefinitionsValueMetadata has a new parameter strong_type
+  - Model ParameterDefinitionsValueMetadata has a new parameter assign_permissions
+  - Model ProviderResourceType has a new parameter location_mappings
+  - Model DeploymentProperties has a new parameter expression_evaluation_options
+  - Model PolicyAssignment has a new parameter non_compliance_messages
+  - Model TemplateLink has a new parameter query_string
+  - Model TemplateSpec has a new parameter versions
+  - Model DeploymentWhatIfProperties has a new parameter expression_evaluation_options
+  - Added operation ApplicationDefinitionsOperations.get_by_id
+  - Added operation ApplicationDefinitionsOperations.begin_create_or_update_by_id
+  - Added operation ApplicationDefinitionsOperations.begin_delete_by_id
+  - Added operation ProvidersOperations.register_at_management_group_scope
+  - Added operation PolicySetDefinitionsOperations.list_by_management_group
+  - Added operation PolicyDefinitionsOperations.list_by_management_group
+  - Added operation group ProviderResourceTypesOperations
+  - Added operation group DataPolicyManifestsOperations
+  - Added operation group ApplicationClientOperationsMixin
+  - Added operation group PolicyExemptionsOperations
+
+**Breaking changes**
+
+  - Operation PolicyAssignmentsOperations.list has a new signature
+  - Operation PolicyAssignmentsOperations.list_for_management_group has a new signature
+  - Operation PolicyAssignmentsOperations.list_for_resource has a new signature
+  - Operation PolicyAssignmentsOperations.list_for_resource_group has a new signature
+  - Operation TemplateSpecsOperations.get has a new signature
+  - Operation TemplateSpecsOperations.list_by_resource_group has a new signature
+  - Operation TemplateSpecsOperations.list_by_subscription has a new signature
+  - Model PolicyAssignment no longer has parameter sku
+  - Operation PolicySetDefinitionsOperations.list_built_in has a new signature
+  - Operation PolicySetDefinitionsOperations.list has a new signature
+  - Operation PolicyDefinitionsOperations.list_built_in has a new signature
+  - Operation PolicyDefinitionsOperations.list has a new signature
+
+## 15.0.0 (2020-09-17)
+
+**Features**
+
+  - Model ProviderResourceType has a new parameter default_api_version
+  - Model ProviderResourceType has a new parameter api_profiles
+  - Model AzureResourceBase has a new parameter system_data
+  - Model AliasPath has a new parameter metadata
+  - Model TemplateLink has a new parameter id
+  - Model TemplateLink has a new parameter relative_path
+  - Model Alias has a new parameter default_metadata
+  - Added operation DeploymentsOperations.begin_what_if_at_management_group_scope
+  - Added operation DeploymentsOperations.begin_what_if_at_tenant_scope
+  - Added operation group TemplateSpecsOperations
+  - Added operation group TemplateSpecVersionsOperations
+  - Added operation group SubscriptionClientOperationsMixin
+
 ## 15.0.0b1 (2020-06-17)
 
 This is beta preview version.
